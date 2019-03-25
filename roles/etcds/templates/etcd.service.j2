@@ -1,0 +1,24 @@
+[Unit]
+Description=etcd-service
+Documentation=https://github.com/coreos/etcd
+
+
+[Service]
+Type=notify
+Restart=on-failure
+RestartSec=5
+ExecStart=/usr/local/bin/etcd
+  --name etcd-service{{ groups.etcds.index(inventory_hostname) | int + 1 }} \
+  --data-dir {{ etcd_data_dir }} \
+  --listen-client-urls http://{{ ansible_default_ipv4.address }}:2379,http://127.0.0.1:2379 \
+  --listen-peer-urls http://{{ ansible_default_ipv4.address }}:2380 \
+  --initial-advertise-peer-urls http://{{ ansible_default_ipv4.address }}:2380 \
+  --advertise-client-urls http://{{ ansible_default_ipv4.address }}:2379 \
+  --initial-cluster-token etcd-cluster-1 \
+  --initial-cluster etcd-service1=http://{{ master1_ip }}:2380 etcd-service2=http://{{ master2_ip }}:2380 etcd-service3=http://{{ master3_ip }}:2380\
+  --initial-cluster-state new \
+  --heartbeat-interval 1000 \
+  --election-timeout 5000
+
+[Install]
+WantedBy=multi-user.target
