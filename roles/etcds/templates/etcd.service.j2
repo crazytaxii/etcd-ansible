@@ -1,5 +1,8 @@
 [Unit]
 Description=etcd-service
+After=network.target
+After=network-online.target
+Wants=network-online.target
 Documentation=https://github.com/coreos/etcd
 
 
@@ -7,7 +10,7 @@ Documentation=https://github.com/coreos/etcd
 Type=notify
 Restart=on-failure
 RestartSec=5
-ExecStart=/usr/local/bin/etcd
+ExecStart=/usr/local/bin/etcd \
   --name etcd-service{{ groups.etcds.index(inventory_hostname) | int + 1 }} \
   --data-dir {{ etcd_data_dir }} \
   --listen-client-urls http://{{ ansible_default_ipv4.address }}:2379,http://127.0.0.1:2379 \
@@ -15,7 +18,7 @@ ExecStart=/usr/local/bin/etcd
   --initial-advertise-peer-urls http://{{ ansible_default_ipv4.address }}:2380 \
   --advertise-client-urls http://{{ ansible_default_ipv4.address }}:2379 \
   --initial-cluster-token etcd-cluster-1 \
-  --initial-cluster etcd-service1=http://{{ master1_ip }}:2380 etcd-service2=http://{{ master2_ip }}:2380 etcd-service3=http://{{ master3_ip }}:2380\
+  --initial-cluster etcd-service1=http://{{ master1_ip }}:2380,etcd-service2=http://{{ master2_ip }}:2380,etcd-service3=http://{{ master3_ip }}:2380 \
   --initial-cluster-state new \
   --heartbeat-interval 1000 \
   --election-timeout 5000

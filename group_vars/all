@@ -1,6 +1,5 @@
 etcd_version: v3.3.12
 etcd_data_dir: /var/lib/etcd
-deploy_ip:
 master1_ip: 10.211.55.16
 master2_ip: 10.211.55.17
 master3_ip: 10.211.55.18
