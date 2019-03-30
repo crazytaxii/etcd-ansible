@@ -15,8 +15,14 @@ Add an etcds group to /etc/ansible/hosts
 <master_ip3>
 ```
 
-
-### Deploying
+### How to deploy
 
 * **Replace master_ips in /group_vars.all**
 * `$ ansible-playbook ./deploy.yml`
+
+### Check cluster health
+
+```bash
+$ etcdctl cluster-health
+$ etcdctl member list
+```
