@@ -1,7 +1,7 @@
 ---
 
-# - name: Disable firewall
-#   systemd: name=firewalld state=stopped enabled=no
+- name: Disable firewall
+  systemd: name=firewalld state=stopped enabled=no
 
 - name: Download etcd-{{ etcd_version }}-linux-amd64.tar.gz
   get_url: url=https://github.com/etcd-io/etcd/releases/download/{{ etcd_version }}/etcd-{{ etcd_version }}-linux-amd64.tar.gz dest=/tmp/etcd-{{ etcd_version }}-linux-amd64.tar.gz
