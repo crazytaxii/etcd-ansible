@@ -1,0 +1,21 @@
+{
+    "CN": "{{ tls.common_name }}",
+    "hosts": [
+        "127.0.0.1",
+        "{{ etcd_node_host }}",
+        "{{ etcd_node_hostname }}"
+    ],
+    "key": {
+        "algo": "rsa",
+        "size": 2048
+    },
+    "names": [
+        {
+            "C": "{{ tls.country }}",
+            "L": "{{ tls.locality }}",
+            "O": "{{ tls.org }}",
+            "ST": "{{ tls.state }}",
+            "OU": "{{ tls.org_unit }}"
+        }
+    ]
+}

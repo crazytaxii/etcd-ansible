@@ -1,0 +1,13 @@
+cfssl_ver: "1.5.0"
+cfssl_release_base_url: https://github.com/cloudflare/cfssl/releases/download/v{{ cfssl_ver }}
+etcd_ver: "v3.4.13"
+etcd_release_url: https://github.com/etcd-io/etcd/releases/download/{{ etcd_ver }}/etcd-{{ etcd_ver }}-linux-amd64.tar.gz
+etcd_data_dir: /var/lib/etcd
+etcd_pki_dir: /etc/etcd/pki
+tls:
+  common_name: crazytaxii.com
+  country: CN
+  locality: Shanghai
+  org: crazytaxii
+  state: Shanghai
+  org_unit: crazytaxii

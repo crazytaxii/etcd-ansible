@@ -1,0 +1,83 @@
+---
+- name: set playbook facts
+  set_fact:
+    etcd_node_hostname: "etcd{{ groups['etcd'].index(inventory_hostname) + 1 }}"
+    node_ip: "{{ ansible_default_ipv4.address }}"
+
+- name: append etcd cluster hostname to /etc/hosts
+  lineinfile:
+    path: /etc/hosts
+    line: "{{ hostvars[item]['ansible_default_ipv4']['address'] }}    etcd{{ groups['etcd'].index(item) + 1 }}"
+  loop: "{{ groups['etcd'] }}"
+
+- name: download etcd
+  get_url:
+    url: "{{ etcd_release_url }}"
+    dest: "/tmp/etcd-{{ etcd_ver }}-linux-amd64.tar.gz"
+    force: yes
+
+- name: unzip etcd tarball
+  unarchive:
+    src: "/tmp/etcd-{{ etcd_ver }}-linux-amd64.tar.gz"
+    dest: /tmp
+    remote_src: yes
+
+- name: copy etcd and etcdctl to /usr/local/bin
+  copy:
+    src: "/tmp/etcd-{{ etcd_ver }}-linux-amd64/{{ item }}"
+    dest: /usr/local/bin
+    mode: 755
+    force: yes
+    remote_src: yes
+  loop:
+    - etcd
+    - etcdctl
+
+- name: remove etcd data directory
+  file:
+    path: "{{ etcd_data_dir }}"
+    state: absent
+
+- name: create etcd data directory
+  file:
+    path: "{{ etcd_data_dir }}"
+    state: directory
+
+- name: create etcd systemd unit config
+  template:
+    src: etcd.service.j2
+    dest: /etc/systemd/system/etcd.service
+    force: yes
+
+- name: system daemon_reload and stop it
+  systemd:
+    name: etcd.service
+    daemon_reload: yes
+    state: stopped
+
+- name: link ca pem
+  file:
+    src: "{{ etcd_pki_dir }}/ca.pem"
+    dest: "{{ etcd_pki_dir }}/etcd-ca.crt"
+    state: link
+  when: enable_tls
+
+- name: link etcd server pem
+  file:
+    src: "{{ etcd_pki_dir }}/{{ etcd_node_hostname }}.pem"
+    dest: "{{ etcd_pki_dir }}/server.crt"
+    state: link
+  when: enable_tls
+
+- name: link etcd server key
+  file:
+    src: "{{ etcd_pki_dir }}/{{ etcd_node_hostname }}-key.pem"
+    dest: "{{ etcd_pki_dir }}/server.key"
+    state: link
+  when: enable_tls
+
+- name: systemd reload and (re)start etcd
+  systemd:
+    name: etcd.service
+    state: started
+    enabled: yes

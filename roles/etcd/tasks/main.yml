@@ -1,0 +1,5 @@
+---
+- include: pre.yaml
+- include: tls.yaml
+  when: enable_tls
+- include: etcd.yaml

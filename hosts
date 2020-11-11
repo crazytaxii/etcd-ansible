@@ -1,4 +1,7 @@
-[etcds]
-10.211.55.16
-10.211.55.17
-10.211.55.18
+[all:vars]
+enable_tls=False
+
+[etcd]
+etcd-node1 ansible_user=root
+etcd-node2 ansible_user=root
+etcd-node3 ansible_user=root

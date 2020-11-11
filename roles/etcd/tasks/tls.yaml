@@ -1,0 +1,66 @@
+---
+- name: set playbook facts
+  set_fact:
+    etcd_node_hostname: "etcd{{ groups['etcd'].index(inventory_hostname) + 1 }}"
+    etcd_node_host: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
+
+- name: create dir for etcd tls pem
+  file:
+    path: "{{ etcd_pki_dir }}"
+    state: directory
+    recurse: yes
+    mode: 0755
+
+- name: copy ca config and csr to target dir
+  template:
+    src: "{{ item }}.j2"
+    dest: "{{ etcd_pki_dir }}/{{ item }}"
+  loop:
+    - ca-config.json
+    - ca-csr.json
+    - etcd-server-csr.json
+    - etcd-client-csr.json
+
+- name: download cfssl tool
+  get_url:
+    url: "{{ cfssl_release_base_url }}/{{ item }}_{{ cfssl_ver }}_linux_amd64"
+    dest: "/usr/local/bin/{{ item }}"
+    mode: 755
+  loop:
+    - cfssl
+    - cfssljson
+
+- name: create ca root certs on etcd node 1
+  shell: cfssl gencert -initca ca-csr.json | cfssljson -bare ca -
+  args:
+    chdir: "{{ etcd_pki_dir }}"
+  when: groups['etcd'].index(inventory_hostname) == 0
+
+- name: fetch ca root certs from etcd node 1
+  fetch:
+    src: "{{ etcd_pki_dir }}/{{ item }}"
+    dest: "{{ playbook_dir }}/roles/etcd/files/certs/"
+    flat: yes
+  loop:
+    - ca.pem
+    - ca-key.pem
+  when: groups['etcd'].index(inventory_hostname) == 0
+
+- name: copy ca root certs to other etcd nodes
+  copy:
+    src: "certs/{{ item }}"
+    dest: "{{ etcd_pki_dir }}"
+  loop:
+    - ca.pem
+    - ca-key.pem
+  when: groups['etcd'].index(inventory_hostname) != 0
+
+- name: create certs for etcd node
+  shell: "cfssl gencert -config=ca-config.json -ca=ca.pem -ca-key=ca-key.pem -profile=server etcd-server-csr.json | cfssljson -bare {{ etcd_node_hostname }}"
+  args:
+    chdir: "{{ etcd_pki_dir }}"
+
+- name: create certs for client
+  shell: "cfssl gencert -config=ca-config.json -ca=ca.pem -ca-key=ca-key.pem -profile=client etcd-client-csr.json | cfssljson -bare etcd-client"
+  args:
+    chdir: "{{ etcd_pki_dir }}"

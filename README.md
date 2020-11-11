@@ -1,28 +1,48 @@
-# ansible-etcds
+# etcd-ansible
 
-Here is a project for deploying etcds to 3 nodes.
+Ansible playbooks for deploying etcd cluster(with TLS).
 
 ## Getting started
 
-[etcd clustering guide](https://coreos.com/etcd/docs/latest/v2/clustering.html)
+[etcd clustering guide](https://etcd.io/docs/v3.4.0/op-guide/clustering/)
 
-Add an etcds group to /etc/ansible/hosts
+- enable_tls `True/False`
+- Add etcd node to group in hosts
 
+    ```ini
+    [etcd]
+    <etcd_node1>
+    <etcd_node2>
+    <etcd_node3>
+    ```
+
+### Deploy with Ansible
+
+```bash
+$ ansible-playbook -i hosts ./deploy.yaml
 ```
-[etcds]
-<master_ip1>
-<master_ip2>
-<master_ip3>
-```
-
-### How to deploy
-
-* **Replace master_ips in /group_vars.all**
-* `$ ansible-playbook ./deploy.yml`
 
 ### Check cluster health
 
-```bash
-$ etcdctl cluster-health
-$ etcdctl member list
-```
+- with TLS
+
+    ```bash
+    $ ETCDCTL_API=3 etcdctl --endpoints=https://etcd1:2379,https://etcd2:2379,https://etcd3:2379 \
+        --cacert=/etc/etcd/pki/ca.pem \
+        --cert=/etc/etcd/pki/etcd-client.pem \
+        --key=/etc/etcd/pki/etcd-client-key.pem \
+        endpoint health
+    https://etcd1:2379 is healthy: successfully committed proposal: took = 10.233885ms
+    https://etcd3:2379 is healthy: successfully committed proposal: took = 10.83476ms
+    https://etcd2:2379 is healthy: successfully committed proposal: took = 10.603532ms
+    ```
+
+- without TLS
+
+    ```bash
+    $ ETCDCTL_API=3 etcdctl --endpoints=http://etcd1:2379,http://etcd2:2379,http://etcd3:2379 \
+        endpoint health
+    http://etcd1:2379 is healthy: successfully committed proposal: took = 3.326095ms
+    http://etcd2:2379 is healthy: successfully committed proposal: took = 2.748218ms
+    http://etcd3:2379 is healthy: successfully committed proposal: took = 2.487955ms
+    ```

@@ -1,0 +1,41 @@
+# /etc/systemd/system/etcd.service
+[Unit]
+Description=etcd
+Documentation=https://github.com/etcd-io/etcd
+After=network-online.target
+
+[Service]
+Type=notify
+Restart=on-failure
+RestartSec=5s
+TimeoutStartSec=0
+ExecStart=/usr/local/bin/etcd --name {{ etcd_node_hostname }} \
+--initial-advertise-peer-urls {% if enable_tls %}https{% else %}http{% endif %}://{{ node_ip }}:2380 \
+--listen-peer-urls {% if enable_tls %}https{% else %}http{% endif %}://{{ node_ip }}:2380 \
+--listen-client-urls {% if enable_tls %}https{% else %}http{% endif %}://{{ node_ip }}:2379 \
+--advertise-client-urls {% if enable_tls %}https{% else %}http{% endif %}://{{ node_ip }}:2379 \
+--data-dir {{ etcd_data_dir }} \
+{% if enable_tls %}--client-cert-auth \{% endif %}
+
+{% if enable_tls %}--trusted-ca-file {{ etcd_pki_dir }}/etcd-ca.crt \{% endif %}
+
+{% if enable_tls %}--cert-file {{ etcd_pki_dir }}/server.crt \{% endif %}
+
+{% if enable_tls %}--key-file {{ etcd_pki_dir }}/server.key \{% endif %}
+
+{% if enable_tls %}--peer-client-cert-auth \{% endif %}
+
+{% if enable_tls %}--peer-trusted-ca-file {{ etcd_pki_dir }}/etcd-ca.crt \{% endif %}
+
+{% if enable_tls %}--peer-key-file {{ etcd_pki_dir }}/server.key \{% endif %}
+
+{% if enable_tls %}--peer-cert-file {{ etcd_pki_dir }}/server.crt \{% endif %}
+
+--initial-cluster {% for etcd_node in groups['etcd'] %}etcd{{ groups['etcd'].index(etcd_node) + 1 }}={% if enable_tls%}https{% else %}http{% endif %}://etcd{{ groups['etcd'].index(etcd_node) + 1 }}:2380{% if not loop.last %},{% endif %}{% endfor %} \
+--initial-cluster-token etcd-cluster \
+--initial-cluster-state new
+ExecReload=/bin/kill -HUP
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target

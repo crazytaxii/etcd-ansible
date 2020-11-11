@@ -1,7 +1,5 @@
 ---
-
-- hosts: etcds
-  roles:
-  - role: etcds
+- hosts: etcd
   remote_user: root
-  sudo: True
+  roles:
+    - role: etcd
